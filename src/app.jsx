@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
 /**
  * Raw Network Systems — Industrial Digital Aesthetic
@@ -170,7 +171,7 @@ function NodeNetwork({ enabled = true, color = "#6fffe9", nodesCount = 64 }) {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-35" aria-hidden />;
 }
 
-export default function RawNetworkPage() {
+export function RawNetworkPage()  {
   const [codeRainOn, setCodeRainOn] = useState(true);
   const [networkOn, setNetworkOn] = useState(true);
   const [speed, setSpeed] = useState(1);
@@ -212,7 +213,7 @@ export default function RawNetworkPage() {
           </div>
 
           <div className="hidden sm:flex items-center gap-6 text-sm text-zinc-300/80 font-mono">
-            <a href="#systems" className="hover:text-emerald-300 transition">systems</a>
+            <Link to="/systems" className="hover:text-emerald-300 transition">systems</Link>
             <a href="#catalog" className="hover:text-emerald-300 transition">catalog</a>
             <a href="#contact" className="hover:text-emerald-300 transition">contact</a>
           </div>
@@ -314,4 +315,105 @@ export default function RawNetworkPage() {
     </div>
   );
 }
+
+// ---------------- Systems Page (portfolio with carousel) ----------------
+function SystemsPage() {
+  const images = [
+    // TODO: replace with your own image URLs later
+    "https://picsum.photos/seed/raw1/1600/900",
+    "https://picsum.photos/seed/raw2/1600/900",
+    "https://picsum.photos/seed/raw3/1600/900",
+    "https://picsum.photos/seed/raw4/1600/900",
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#070b0d] text-zinc-100">
+      <header className="px-6 sm:px-10 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_16px_2px_rgba(52,211,153,0.7)]" />
+          <span className="font-mono tracking-widest text-xs text-emerald-300/90">SYSTEMS</span>
+        </div>
+        <nav className="hidden sm:flex items-center gap-6 text-sm text-zinc-300/80 font-mono">
+          <Link to="/" className="hover:text-emerald-300 transition">home</Link>
+        </nav>
+      </header>
+
+      <section className="px-6 sm:px-10 py-10">
+        <h2 className="font-mono text-2xl sm:text-4xl text-emerald-400">portfolio</h2>
+        <p className="text-zinc-300/90 mt-2 font-mono">selected works and experiments</p>
+
+        <Carousel images={images} />
+      </section>
+    </div>
+  );
+}
+
+// Framer Motion carousel (touch + drag, autoplay)
+function Carousel({ images }) {
+  const [index, setIndex] = React.useState(0);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const timeoutRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (isDragging) return;
+    timeoutRef.current && clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setIndex((i) => (i + 1) % images.length);
+    }, 3500);
+    return () => clearTimeout(timeoutRef.current);
+  }, [index, isDragging, images.length]);
+
+  return (
+    <div className="mt-6">
+      <div className="relative overflow-hidden rounded-2xl border border-zinc-700/60 bg-zinc-900/40">
+        <motion.div
+          className="flex cursor-grab active:cursor-grabbing"
+          drag="x"
+          dragConstraints={{ left: -((images.length - 1) * 100) + "%", right: 0 }}
+          dragElastic={0.1}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={(_, info) => {
+            setIsDragging(false);
+            const offset = info.offset.x;
+            if (offset < -50 && index < images.length - 1) setIndex(index + 1);
+            else if (offset > 50 && index > 0) setIndex(index - 1);
+          }}
+          animate={{ x: `-${index * 100}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 20 }}
+          style={{ width: `${images.length * 100}%` }}
+        >
+          {images.map((src, i) => (
+            <div key={i} className="w-full shrink-0" style={{ width: `${100 / images.length}%` }}>
+              <img src={src} alt={`slide ${i + 1}`} className="block w-full h-[50vh] sm:h-[70vh] object-cover" />
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Dots */}
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              className={`h-2 w-2 rounded-full transition ${i === index ? "bg-emerald-400" : "bg-zinc-500"}`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+// ---------------- App Router ----------------
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<RawNetworkPage />} />
+        <Route path="/systems" element={<SystemsPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
 
